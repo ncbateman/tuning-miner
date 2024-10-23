@@ -1,18 +1,9 @@
 services:
 
-  api:
-    build:
-      context: ./api
-      dockerfile: docker/Dockerfile
-    ports:
-      - "${NODE_PORT}:${NODE_PORT}"
-    env_file:
-      - .env
-
   redis:
     image: redis/redis-stack:latest
     ports:
-      - "6379:6379"
+      - 6379
 
   axolotl:
     build:
