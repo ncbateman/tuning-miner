@@ -33,27 +33,12 @@ async def start_training(request: TrainingRequest):
         raise HTTPException(status_code=409, detail="Training already in progress. Please wait for the current job to finish.")
 
     try:
-        set_training_flag()
-
-        config = await create_config(
-            request.dataset_url, 
-            request.dataset_type, 
-            request.job_id,
-            request.base_model
-        )
-
-        preprocessing_command = f"python -m axolotl.cli.preprocess {config} --dataset_prepared_path=/tmp/prepared-data-{request.job_id}"
+        preprocessing_command = f"python -m axolotl.cli.preprocess {config} --debug"
         subprocess.run(preprocessing_command, shell=True, check=True)
-        
-        training_command = f"accelerate launch -m axolotl.cli.train {config} --dataset_prepared_path=/tmp/prepared-data-{request.job_id}"
-        training_process = subprocess.Popen(training_command, shell=True)
+        training_command = f"accelerate launch -m axolotl.cli.train {config}"
+        subprocess.run(training_command, shell=True, check=True)
+        return {"status": "success", "message": "Training started successfully"}
 
-        # Clear the training flag after training has started (to be done in background or after completion)
-        training_process.wait()  # This waits for the process to complete
-        clear_training_flag()
-        
-        return {"status": "success", "message": "Training started in the background"}
-    
     except subprocess.CalledProcessError as e:
         clear_training_flag()  # Clear the flag if there was an error
         raise HTTPException(status_code=500, detail=f"Error during preprocessing: {str(e)}")
