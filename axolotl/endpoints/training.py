@@ -2,6 +2,7 @@ import os
 import subprocess
 import redis
 import yaml
+import asyncio
 from loguru import logger
 from fastapi import APIRouter, HTTPException
 
@@ -15,52 +16,72 @@ router = APIRouter()
 
 r = redis.Redis(host='redis', port=6379, db=0)
 
-TRAINING_FLAG_KEY = "is_training"
+TRAINING_FLAG_KEY = "flags:training"
+TRAINING_TASK_ID_KEY = "flags:training_task_id"
+
+logger.info(r.exists(TRAINING_FLAG_KEY))
+
 
 def is_training():
     return r.exists(TRAINING_FLAG_KEY)
 
-def set_training_flag():
+def set_training_flag(task_id: str):
     r.set(TRAINING_FLAG_KEY, "true")
+    r.set(TRAINING_TASK_ID_KEY, task_id)
 
 def clear_training_flag():
     r.delete(TRAINING_FLAG_KEY)
+    r.delete(TRAINING_TASK_ID_KEY)
+
+def get_training_task_id():
+    return r.get(TRAINING_TASK_ID_KEY).decode('utf-8')
+
+async def run_training_process(preprocessing_command: str, training_command: str, task_id: str):
+    try:
+        subprocess.run(preprocessing_command, shell=True, check=True)
+
+        training_process = await asyncio.create_subprocess_shell(training_command)
+        await training_process.wait()
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error during preprocessing or training for job {task_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error during preprocessing or training: {str(e)}")
+    finally:
+        clear_training_flag()
 
 @router.post("/start_training")
 async def start_training(request: TrainingRequest):
     if is_training():
-        raise HTTPException(status_code=409, detail="Training already in progress. Please wait for the current job to finish.")
-
+        current_task_id = get_training_task_id()
+        if request.task_id != current_task_id:
+            raise HTTPException(status_code=409, detail="Another training task is currently in progress.")
+        
     try:
-        set_training_flag()
-
         config = await create_config(
             request.dataset_url, 
             request.dataset_type, 
-            request.job_id,
+            request.task_id,
             request.base_model
         )
 
-        preprocessing_command = f"python -m axolotl.cli.preprocess {config} --dataset_prepared_path=/tmp/prepared-data-{request.job_id}"
-        subprocess.run(preprocessing_command, shell=True, check=True)
-        
-        training_command = f"accelerate launch -m axolotl.cli.train {config} --dataset_prepared_path=/tmp/prepared-data-{request.job_id}"
-        training_process = subprocess.Popen(training_command, shell=True)
+        preprocessing_command = f"python -m axolotl.cli.preprocess {config} --dataset_prepared_path=/tmp/prepared-data-{request.task_id}"
+        training_command = f"accelerate launch -m axolotl.cli.train {config} --dataset_prepared_path=/tmp/prepared-data-{request.task_id}"
 
-        training_process.wait()
-        clear_training_flag()
-        
+        asyncio.create_task(run_training_process(preprocessing_command, training_command, request.task_id))
+
         return {"status": "success", "message": "Training started in the background"}
-    
-    except subprocess.CalledProcessError as e:
-        clear_training_flag()  # Clear the flag if there was an error
-        raise HTTPException(status_code=500, detail=f"Error during preprocessing: {str(e)}")
+
+    except Exception as e:
+        clear_training_flag()
+        logger.error(f"Error starting training: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error starting training: {str(e)}")
 
 @router.post("/task_offer")
 async def task_offer(request: MinerTaskRequest) -> MinerTaskResponse:
     if is_training():
         return MinerTaskResponse(message="At capacity", accepted=False)
     else:
+        set_training_flag(request.task_id)
         return MinerTaskResponse(message="Yes", accepted=True)
 
 @router.get("/get_latest_model_submission/{task_id}")
