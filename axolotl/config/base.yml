@@ -69,3 +69,5 @@ deepspeed:
 weight_decay: 0.0
 fsdp:
 fsdp_config:
+
+max_steps: 5

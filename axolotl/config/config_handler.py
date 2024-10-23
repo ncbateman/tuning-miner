@@ -26,12 +26,18 @@ async def create_config(dataset_url, dataset_type, job_id, base_model):
         config = yaml.safe_load(file)
 
     dataset_entry = create_dataset_entry(dataset_path, dataset_type, FileFormat.JSON)
+
     config["datasets"] = []
+
     config["datasets"].append(dataset_entry)
 
     config["base_model"] = base_model
 
     config["wandb_runid"] = job_id
+
+    output_model_id = config["hub_model_id"]
+
+    config["hub_model_id"] = f"{output_model_id}-{job_id}"
 
     config["mlflow_experiment_name"] = dataset_url
 
