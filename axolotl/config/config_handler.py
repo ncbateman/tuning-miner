@@ -38,6 +38,10 @@ async def create_config(dataset_url, dataset_type, job_id, base_model):
 
     config["mlflow_experiment_name"] = dataset_url
 
+    dataset_entry["ds_type"] = FileFormat.JSON.value
+
+    dataset_entry["data_files"] = [dataset_path]
+
     config_file_path = save_config(config, f"/workspace/config/{job_id}.yaml")
 
     return config_file_path
