@@ -8,7 +8,6 @@ from utilities.dataset import download_dataset
 
 from models.training_request import TrainingRequest
 from models.miner_task_request import MinerTaskRequest
-from models.miner_task_response import MinerTaskResponse
 from models.file_format import FileFormat
 
 from config.config_handler import create_config
@@ -30,29 +29,33 @@ def clear_training_flag():
 
 @router.post("/train")
 async def start_training(request: TrainingRequest):
-    
     if is_training():
         raise HTTPException(status_code=409, detail="Training already in progress. Please wait for the current job to finish.")
 
-    set_training_flag()
+    try:
+        set_training_flag()
 
-    config = await create_config(
-        request.dataset_url, 
-        request.dataset_type, 
-        request.job_id,
-        request.base_model
-    )
+        config = await create_config(
+            request.dataset_url, 
+            request.dataset_type, 
+            request.job_id,
+            request.base_model
+        )
 
-    preprocessing_command = f"python -m axolotl.cli.preprocess {config} --dataset_prepared_path=/tmp/prepared-data-{request.job_id}"
-    subprocess.run(preprocessing_command, shell=True, check=True)
+        preprocessing_command = f"python -m axolotl.cli.preprocess {config} --dataset_prepared_path=/tmp/prepared-data-{request.job_id}"
+        subprocess.run(preprocessing_command, shell=True, check=True)
+        
+        training_command = f"accelerate launch -m axolotl.cli.train {config} --dataset_prepared_path=/tmp/prepared-data-{request.job_id}"
+        training_process = subprocess.Popen(training_command, shell=True)
+
+        training_process.wait()
+        clear_training_flag()
+        
+        return {"status": "success", "message": "Training started in the background"}
     
-    training_command = f"accelerate launch -m axolotl.cli.train {config} --dataset_prepared_path=/tmp/prepared-data-{request.job_id}"
-    training_process = subprocess.Popen(training_command, shell=True)
-
-    training_process.wait()
-    clear_training_flag()
-    
-    return {"status": "success", "message": "Training started in the background"}
+    except subprocess.CalledProcessError as e:
+        clear_training_flag()  # Clear the flag if there was an error
+        raise HTTPException(status_code=500, detail=f"Error during preprocessing: {str(e)}")
 
 @router.post("/task_offer")
 async def task_offer(request: MinerTaskRequest) -> MinerTaskResponse:
