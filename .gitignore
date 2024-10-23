@@ -1,0 +1,8 @@
+__pycache__
+*/__pycache__
+/redis/redis_data/dump.rdb
+/faiss/indexes/*
+/repositories/*
+*.egg-info
+.env
+.venv

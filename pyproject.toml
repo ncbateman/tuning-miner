@@ -1,0 +1,44 @@
+[project]
+name = "tuning-miner"
+version = "0.0.1"
+description = "Finetuning and Lora miner"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "httpx",
+    "loguru",
+    "python-dotenv",
+    "redis",
+    "uvicorn",
+    "minio",
+    "aiohttp"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit==4.0.1",
+    "ruff>=0.6.0",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["core", "endpoints"]
+
+[tool.ruff]
+select = ["F", "E", "W"]
+
+[tool.pre-commit]
+repos = [
+    { repo = "https://github.com/pre-commit/pre-commit-hooks", rev = "v4.0.1", hooks = [
+        { id = "trailing-whitespace" },
+        { id = "end-of-file-fixer" },
+        { id = "check-ast" }
+    ] },
+    { repo = "https://github.com/charliermarsh/ruff-pre-commit", rev = "v0.6.0", hooks = [
+        { id = "ruff" }
+    ] }
+]

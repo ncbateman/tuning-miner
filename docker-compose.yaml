@@ -1,0 +1,32 @@
+services:
+
+  api:
+    build:
+      context: ./api
+      dockerfile: docker/Dockerfile
+    ports:
+      - "${NODE_PORT}:${NODE_PORT}"
+    env_file:
+      - .env
+
+  axolotl:
+    build:
+      context: ./axolotl
+      dockerfile: docker/Dockerfile
+      args:
+        HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN}
+        WANDB_TOKEN: ${WANDB_TOKEN}
+    volumes:
+      - ./axolotl/config:/workspace/config
+    ports:
+      - "${AXOLOTL_PORT}:${AXOLOTL_PORT}"
+    env_file:
+      - .env
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    

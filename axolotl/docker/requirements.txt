@@ -1,0 +1,11 @@
+fastapi
+httpx
+loguru
+python-dotenv
+redis
+uvicorn
+minio
+aiohttp
+mlflow 
+huggingface_hub 
+wandb

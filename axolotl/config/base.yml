@@ -1,0 +1,71 @@
+base_model: NousResearch/Meta-Llama-3-8B-Instruct
+model_type: LlamaForCausalLM
+tokenizer_type: AutoTokenizer
+
+load_in_8bit: true
+load_in_4bit: false
+strict: false
+
+chat_template: llama3
+datasets:
+dataset_prepared_path:
+val_set_size: 0.05
+output_dir: miner_id_24
+
+sequence_len: 4096
+sample_packing: false
+pad_to_sequence_len: true
+
+adapter: lora
+lora_model_dir:
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+lora_target_linear: true
+lora_fan_in_fan_out:
+dataset_processes: 12
+
+gradient_accumulation_steps: 4
+micro_batch_size: 4
+num_epochs: 5
+optimizer: adamw_bnb_8bit
+lr_scheduler: cosine
+learning_rate: 0.0001
+
+train_on_inputs: false
+group_by_length: false
+bf16: auto
+fp16:
+tf32: false
+
+gradient_checkpointing: true
+early_stopping_patience:
+resume_from_checkpoint:
+local_rank:
+logging_steps: 1
+xformers_attention:
+flash_attention: true
+s2_attention:
+
+wandb_project: tuning-miner
+wandb_entity: breakfasthut
+wandb_mode: online
+wandb_run: miner
+wandb_runid: default
+
+hub_model_id: ncbateman/tuning-miner-output
+hub_strategy: checkpoint
+hub_token:
+
+
+save_steps: 5
+save_strategy: steps
+warmup_steps: 50
+evals_per_epoch: 2
+eval_table_size:
+eval_max_new_tokens: 512
+debug:
+deepspeed:
+weight_decay: 0.0
+fsdp:
+fsdp_config:

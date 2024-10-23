@@ -1,0 +1,66 @@
+adapter: lora
+base_model: NousResearch/Meta-Llama-3-8B-Instruct
+bf16: auto
+chat_template: llama3
+dataset_prepared_path: null
+dataset_processes: 12
+datasets:
+- data_files:
+  - string.json
+  ds_type: json
+  path: /workspace/axolotl/data/string.json
+  type: instruct
+debug: null
+deepspeed: null
+early_stopping_patience: null
+eval_max_new_tokens: 512
+eval_table_size: null
+evals_per_epoch: 2
+flash_attention: true
+fp16: null
+fsdp: null
+fsdp_config: null
+gradient_accumulation_steps: 4
+gradient_checkpointing: true
+group_by_length: false
+hub_model_id: ncbateman/tuning-miner-output
+hub_strategy: checkpoint
+hub_token: null
+learning_rate: 0.0001
+load_in_4bit: false
+load_in_8bit: true
+local_rank: null
+logging_steps: 1
+lora_alpha: 32
+lora_dropout: 0.05
+lora_fan_in_fan_out: null
+lora_model_dir: null
+lora_r: 16
+lora_target_linear: true
+lr_scheduler: cosine
+micro_batch_size: 4
+mlflow_experiment_name: https://5a301a635a9d0ac3cb7fcc3bf373c3c3.r2.cloudflarestorage.com/tuning/mhenrichsen/alpaca_2k_test_test_data.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=d49fdd0cc9750a097b58ba35b2d9fbed%2F20241018%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20241018T163610Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=78355e17749fa3775fa09e8e2b74249608308859cd57bdf9dfe47658d965d0a6
+model_type: LlamaForCausalLM
+num_epochs: 5
+optimizer: adamw_bnb_8bit
+output_dir: miner_id_24
+pad_to_sequence_len: true
+resume_from_checkpoint: null
+s2_attention: null
+sample_packing: false
+save_steps: 5
+save_strategy: steps
+sequence_len: 4096
+strict: false
+tf32: false
+tokenizer_type: AutoTokenizer
+train_on_inputs: false
+val_set_size: 0.05
+wandb_entity: breakfasthut
+wandb_mode: online
+wandb_project: tuning-miner
+wandb_run: miner
+wandb_runid: string
+warmup_steps: 50
+weight_decay: 0.0
+xformers_attention: null
