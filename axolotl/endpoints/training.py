@@ -62,7 +62,7 @@ async def run_training_process(preprocessing_command: str, training_command: str
         
         clear_training_flag()
 
-@router.post("/start_training")
+@router.post("/start_training/")
 async def start_training(request: TrainingRequest):
     if is_training():
         current_task_id = get_training_task_id()
@@ -89,7 +89,7 @@ async def start_training(request: TrainingRequest):
         logger.error(f"Error starting training: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error starting training: {str(e)}")
 
-@router.post("/task_offer")
+@router.post("/task_offer/")
 async def task_offer(request: MinerTaskRequest) -> MinerTaskResponse:
     if is_training():
         return MinerTaskResponse(message="At capacity", accepted=False)
