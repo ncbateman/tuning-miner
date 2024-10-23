@@ -53,7 +53,7 @@ wandb_mode: online
 wandb_run: miner
 wandb_runid: default
 
-hub_model_id: ncbateman/tuning-miner-output
+hub_model_id: ncbateman/tuning-miner-testbed
 hub_strategy: checkpoint
 hub_token:
 
