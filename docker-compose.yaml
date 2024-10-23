@@ -9,6 +9,11 @@ services:
     env_file:
       - .env
 
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+
   axolotl:
     build:
       context: ./axolotl

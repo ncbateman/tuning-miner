@@ -3,6 +3,7 @@ __pycache__
 /redis/redis_data/dump.rdb
 /faiss/indexes/*
 /repositories/*
+/axolotl/config/*.yaml
 *.egg-info
 .env
 .venv

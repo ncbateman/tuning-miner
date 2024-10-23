@@ -1,15 +1,20 @@
 adapter: lora
-base_model: NousResearch/Meta-Llama-3-8B-Instruct
+base_model: unsloth/Llama-3.2-1B-Instruct
 bf16: auto
 chat_template: llama3
 dataset_prepared_path: null
 dataset_processes: 12
 datasets:
 - data_files:
-  - string.json
+  - /workspace/axolotl/data/string.json
   ds_type: json
   path: /workspace/axolotl/data/string.json
-  type: instruct
+  type:
+    field_input: problem
+    field_instruction: type
+    field_output: solution
+    system_format: '{system}'
+    system_prompt: ''
 debug: null
 deepspeed: null
 early_stopping_patience: null
@@ -23,7 +28,7 @@ fsdp_config: null
 gradient_accumulation_steps: 4
 gradient_checkpointing: true
 group_by_length: false
-hub_model_id: ncbateman/tuning-miner-output
+hub_model_id: ncbateman/tuning-miner-testbed
 hub_strategy: checkpoint
 hub_token: null
 learning_rate: 0.0001
@@ -39,7 +44,7 @@ lora_r: 16
 lora_target_linear: true
 lr_scheduler: cosine
 micro_batch_size: 4
-mlflow_experiment_name: https://5a301a635a9d0ac3cb7fcc3bf373c3c3.r2.cloudflarestorage.com/tuning/mhenrichsen/alpaca_2k_test_test_data.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=d49fdd0cc9750a097b58ba35b2d9fbed%2F20241018%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20241018T163610Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=78355e17749fa3775fa09e8e2b74249608308859cd57bdf9dfe47658d965d0a6
+mlflow_experiment_name: https://5a301a635a9d0ac3cb7fcc3bf373c3c3.r2.cloudflarestorage.com/tuning/lighteval/MATH-Hard_train_data.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=d49fdd0cc9750a097b58ba35b2d9fbed%2F20241023%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20241023T143154Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=4a7c1dcd761dd78a44d40f4535772b806d1b658d16321165e31f5e9b75617896
 model_type: LlamaForCausalLM
 num_epochs: 5
 optimizer: adamw_bnb_8bit
@@ -48,7 +53,7 @@ pad_to_sequence_len: true
 resume_from_checkpoint: null
 s2_attention: null
 sample_packing: false
-save_steps: 5
+save_steps: 20
 save_strategy: steps
 sequence_len: 4096
 strict: false
