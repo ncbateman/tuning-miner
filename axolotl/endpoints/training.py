@@ -28,8 +28,8 @@ def is_training():
     return r.exists(TRAINING_FLAG_KEY)
 
 def set_training_flag(task_id: str):
-    r.set(TRAINING_FLAG_KEY, "true")
-    r.set(TRAINING_TASK_ID_KEY, task_id)
+    r.set(TRAINING_FLAG_KEY, "true", ex=900)
+    r.set(TRAINING_TASK_ID_KEY, task_id, ex=900)
 
 def clear_training_flag():
     r.delete(TRAINING_FLAG_KEY)

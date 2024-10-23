@@ -1,0 +1,13 @@
+{
+    "dataset_url": "https://5a301a635a9d0ac3cb7fcc3bf373c3c3.r2.cloudflarestorage.com/tuning/lighteval/MATH-Hard_train_data.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=d49fdd0cc9750a097b58ba35b2d9fbed%2F20241023%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20241023T143154Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=4a7c1dcd761dd78a44d40f4535772b806d1b658d16321165e31f5e9b75617896",
+    "base_model": "unsloth/Llama-3.2-1B-Instruct",
+    "dataset_type": {
+      "system_format": "{system}",
+      "field_instruction": "type",
+      "field_input":"problem",
+      "field_output": "solution"
+    },
+    "file_format": "s3",
+    "task_id": "asd",
+    "hours_to_complete": 3
+}
