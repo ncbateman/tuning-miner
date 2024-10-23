@@ -66,7 +66,7 @@ async def task_offer(request: MinerTaskRequest) -> MinerTaskResponse:
 @router.get("/get_latest_model_submission/{task_id}")
 async def get_latest_model_submission(task_id: str) -> str:
     try:
-        config_filename = f"{task_id}.yml"
+        config_filename = f"{task_id}.yaml"
 
         config_path = os.path.join('/workspace/config/', config_filename)
         with open(config_path, "r") as file:

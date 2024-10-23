@@ -25,9 +25,6 @@ async def create_config(dataset_url, dataset_type, job_id, base_model):
     with open(config_template_path, "r") as file:
         config = yaml.safe_load(file)
 
-    logger.info(dataset_type)
-    logger.info(type(dataset_type))
-
     dataset_entry = create_dataset_entry(dataset_path, dataset_type, FileFormat.JSON)
     config["datasets"] = []
     config["datasets"].append(dataset_entry)
