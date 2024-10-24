@@ -39,12 +39,31 @@ def clear_training_flag():
 def get_training_task_id():
     return r.get(TRAINING_TASK_ID_KEY).decode('utf-8')
 
+async def stream_process_output(process, task_id: str, stage: str):
+    """
+    Streams the output from the process to the logger in real-time.
+    """
+    while True:
+        line = await process.stdout.readline()
+        if line:
+            logger.info(f"[{stage} - Task {task_id}] {line.decode().strip()}")
+        else:
+            break
+
 async def run_process_with_timeout(command: str, timeout: int, task_id: str, stage: str):
     """
-    Runs a subprocess with a timeout. If the timeout is exceeded, the process is terminated.
+    Runs a subprocess with a timeout. Streams the output in real-time. 
+    If the timeout is exceeded, the process is terminated.
     """
     try:
-        process = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
+        # Start streaming stdout
+        asyncio.create_task(stream_process_output(process, task_id, stage))
 
         try:
             await asyncio.wait_for(process.wait(), timeout=timeout)
@@ -54,9 +73,10 @@ async def run_process_with_timeout(command: str, timeout: int, task_id: str, sta
             raise HTTPException(status_code=408, detail=f"{stage.capitalize()} process exceeded the time limit and was terminated.")
 
         stdout, stderr = await process.communicate()
+
         if process.returncode != 0:
-            logger.error(f"Error during {stage} for job {task_id}: {stderr.decode()}")
-            raise HTTPException(status_code=500, detail=f"Error during {stage}: {stderr.decode()}")
+            logger.error(f"Error during {stage} for task {task_id}: {stderr.decode().strip()}")
+            raise HTTPException(status_code=500, detail=f"Error during {stage}: {stderr.decode().strip()}")
 
         return stdout, stderr
 

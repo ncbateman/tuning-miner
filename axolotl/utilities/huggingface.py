@@ -6,14 +6,12 @@ def make_repo_public(task_id: str, token: str):
     repo_id = f"ncbateman/tuning-miner-testbed-{task_id}"
 
     try:
-        # Try to update the visibility of the repository to public
         api.update_repo_visibility(repo_id=repo_id, private=False, token=token)
         logger.info(f"Repository {repo_id} is now public.")
         
     except Exception:
         logger.info(f"Repository {repo_id} not found. Creating the repository.")
         
-        # If the repository is not found, create it
         try:
             api.create_repo(repo_id=repo_id, token=token, private=False)
             logger.info(f"Repository {repo_id} created successfully.")
@@ -21,7 +19,6 @@ def make_repo_public(task_id: str, token: str):
             logger.error(f"Failed to create repository {repo_id}: {e}")
             return
         
-        # After creation, make it public
         try:
             api.update_repo_visibility(repo_id=repo_id, private=False, token=token)
             logger.info(f"Repository {repo_id} is now public.")
