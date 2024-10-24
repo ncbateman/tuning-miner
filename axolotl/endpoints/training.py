@@ -67,23 +67,22 @@ async def run_process_with_timeout(command: str, timeout: int, task_id: str, sta
 
 async def run_training_task(preprocessing_command: str, training_command: str, task_id: str, config, timeout_seconds: int):
     try:
-        # Run preprocessing
+        hf_token = os.getenv("HUGGINGFACE_TOKEN")
+        if not hf_token:
+            logger.error("HUGGINGFACE_TOKEN environment variable not set.")
+            raise HTTPException(status_code=500, detail="Hugging Face token is missing.")
+        
+        make_repo_public(task_id, hf_token)
+
         await run_process_with_timeout(preprocessing_command, timeout_seconds, task_id, "preprocessing")
 
-        # Run training
         await run_process_with_timeout(training_command, timeout_seconds, task_id, "training")
 
     except HTTPException as e:
         logger.error(f"Training for task {task_id} failed: {str(e)}")
         raise e
 
-    finally:
-        # Make Hugging Face repo public after successful training
-        hf_token = os.getenv("HUGGINGFACE_TOKEN")
-        if not hf_token:
-            logger.error("HUGGINGFACE_TOKEN environment variable not set.")
-            raise HTTPException(status_code=500, detail="Hugging Face token is missing.")
-        
+    finally:        
         try:
             make_repo_public(task_id, hf_token)
         except Exception as e:
