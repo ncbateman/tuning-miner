@@ -111,3 +111,15 @@ async def get_latest_model_submission(task_id: str) -> str:
     except Exception as e:
         logger.error(f"Error retrieving latest model submission for task {task_id}: {str(e)}")
         raise HTTPException(status_code=404, detail=f"No model submission found for task {task_id}")
+    
+@router.get("/current_training_task/")
+async def current_training_task():
+    if not is_training():
+        raise HTTPException(status_code=404, detail="No training task is currently in progress.")
+    
+    try:
+        task_id = get_training_task_id()
+        return {"current_task_id": task_id}
+    except Exception as e:
+        logger.error(f"Error retrieving the current training task ID: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving the current training task ID: {str(e)}")
