@@ -71,10 +71,10 @@ async def start_training(request: TrainingRequest):
         
     try:
         config = await create_config(
-            request.dataset_url, 
+            request.dataset, 
             request.dataset_type, 
             request.task_id,
-            request.base_model
+            request.model
         )
 
         preprocessing_command = f"python -m axolotl.cli.preprocess {config} --dataset_prepared_path=/tmp/prepared-data-{request.task_id}"
