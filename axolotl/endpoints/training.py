@@ -39,19 +39,47 @@ def clear_training_flag():
 def get_training_task_id():
     return r.get(TRAINING_TASK_ID_KEY).decode('utf-8')
 
-async def run_training_process(preprocessing_command: str, training_command: str, task_id: str, config):
+async def run_process_with_timeout(command: str, timeout: int, task_id: str, stage: str):
+    """
+    Runs a subprocess with a timeout. If the timeout is exceeded, the process is terminated.
+    """
     try:
-        subprocess.run(preprocessing_command, shell=True, check=True)
-        training_process = await asyncio.create_subprocess_shell(training_command)
-        await training_process.wait()
+        process = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+
+        try:
+            await asyncio.wait_for(process.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            logger.error(f"{stage.capitalize()} for task {task_id} exceeded the time limit and was terminated.")
+            process.terminate()  # Terminate the process if it exceeds the timeout
+            raise HTTPException(status_code=408, detail=f"{stage.capitalize()} process exceeded the time limit and was terminated.")
+
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            logger.error(f"Error during {stage} for job {task_id}: {stderr.decode()}")
+            raise HTTPException(status_code=500, detail=f"Error during {stage}: {stderr.decode()}")
+
+        return stdout, stderr
 
     except subprocess.CalledProcessError as e:
-        logger.error(f"Error during preprocessing or training for job {task_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error during preprocessing or training: {str(e)}")
-    
+        logger.error(f"Error during {stage} for job {task_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error during {stage}: {str(e)}")
+
+
+async def run_training_task(preprocessing_command: str, training_command: str, task_id: str, config, timeout_seconds: int):
+    try:
+        # Run preprocessing
+        await run_process_with_timeout(preprocessing_command, timeout_seconds, task_id, "preprocessing")
+
+        # Run training
+        await run_process_with_timeout(training_command, timeout_seconds, task_id, "training")
+
+    except HTTPException as e:
+        logger.error(f"Training for task {task_id} failed: {str(e)}")
+        raise e
+
     finally:
+        # Make Hugging Face repo public after successful training
         hf_token = os.getenv("HUGGINGFACE_TOKEN")
-        
         if not hf_token:
             logger.error("HUGGINGFACE_TOKEN environment variable not set.")
             raise HTTPException(status_code=500, detail="Hugging Face token is missing.")
@@ -63,8 +91,10 @@ async def run_training_process(preprocessing_command: str, training_command: str
         
         clear_training_flag()
 
+
 @router.post("/start_training/")
 async def start_training(request: TrainingRequest):
+    logger.info(f"\n\n\n\n{request}\n\n\n\n")
     if is_training():
         current_task_id = get_training_task_id()
         if request.task_id != current_task_id:
@@ -81,7 +111,12 @@ async def start_training(request: TrainingRequest):
         preprocessing_command = f"python -m axolotl.cli.preprocess {config} --dataset_prepared_path=/tmp/prepared-data-{request.task_id}"
         training_command = f"accelerate launch -m axolotl.cli.train {config} --dataset_prepared_path=/tmp/prepared-data-{request.task_id}"
 
-        asyncio.create_task(run_training_process(preprocessing_command, training_command, request.task_id, config))
+        # Set the training flag with timeout
+        set_training_flag(request.task_id, request.hours_to_complete)
+        timeout_seconds = request.hours_to_complete * 3600
+
+        # Start the entire training task (preprocessing + training) in the background
+        asyncio.create_task(run_training_task(preprocessing_command, training_command, request.task_id, config, timeout_seconds))
 
         return {"status": "success", "message": "Training started in the background"}
 
@@ -90,8 +125,11 @@ async def start_training(request: TrainingRequest):
         logger.error(f"Error starting training: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error starting training: {str(e)}")
 
+
 @router.post("/task_offer/")
 async def task_offer(request: MinerTaskRequest) -> MinerTaskResponse:
+
+    logger.info(f"\n\n\n\n{request}\n\n\n\n")
     if is_training():
         return MinerTaskResponse(message="At capacity", accepted=False)
     else:
