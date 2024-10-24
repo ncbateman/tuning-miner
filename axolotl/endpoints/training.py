@@ -27,9 +27,10 @@ logger.info(r.exists(TRAINING_FLAG_KEY))
 def is_training():
     return r.exists(TRAINING_FLAG_KEY)
 
-def set_training_flag(task_id: str):
-    r.set(TRAINING_FLAG_KEY, "true", ex=900)
-    r.set(TRAINING_TASK_ID_KEY, task_id, ex=900)
+def set_training_flag(task_id: str, hours_to_complete: int):
+    timeout_seconds = hours_to_complete * 3600
+    r.set(TRAINING_FLAG_KEY, "true", ex=timeout_seconds)
+    r.set(TRAINING_TASK_ID_KEY, task_id, ex=timeout_seconds)
 
 def clear_training_flag():
     r.delete(TRAINING_FLAG_KEY)
@@ -94,7 +95,7 @@ async def task_offer(request: MinerTaskRequest) -> MinerTaskResponse:
     if is_training():
         return MinerTaskResponse(message="At capacity", accepted=False)
     else:
-        set_training_flag(request.task_id)
+        set_training_flag(request.task_id, request.hours_to_complete)
         return MinerTaskResponse(message="Yes", accepted=True)
 
 @router.get("/get_latest_model_submission/{task_id}")
